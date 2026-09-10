@@ -4,8 +4,8 @@ from agents import build_search_reader_agent, build_search_agent, writer_chain, 
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="ResearchMind · AI Research Agent",
-    page_icon="🔬",
+    page_title="ResearchMind — Research Agent",
+    page_icon="§",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -13,300 +13,341 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap');
 
-/* ── Reset & base ── */
+/* ── Tokens ──
+   Paper/ink palette with a single restrained navy accent. Green is reserved
+   for completed states and the critique panel only. */
+:root {
+    --paper: #ffffff;
+    --paper-subtle: #f5f6f8;
+    --ink: #171a21;
+    --ink-muted: #5b6270;
+    --ink-faint: #8a909c;
+    --border: #dfe2e8;
+    --accent: #1f3d63;
+    --accent-hover: #16304f;
+    --accent-soft: #eef2f8;
+    --success: #1d7a4c;
+    --success-soft: #e9f5ee;
+    --font-serif: 'Source Serif 4', Georgia, serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-    color: #e8e4dc;
+    font-family: var(--font-sans);
+    color: var(--ink);
 }
 
 .stApp {
-    background: #0a0a0f;
-    background-image:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,140,50,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(255,80,30,0.08) 0%, transparent 55%);
+    background: var(--paper);
 }
 
-/* ── Hide default streamlit chrome ── */
+/* Every element Streamlit renders defaults to ink on paper. */
+.stApp, .stApp p, .stApp span, .stApp li, .stApp label,
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6,
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] * {
+    color: var(--ink);
+}
+
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem 4rem; max-width: 1200px; }
+.block-container { padding: 2.5rem 3rem 4rem; max-width: 1180px; }
 
-/* ── Hero header ── */
-.hero {
-    text-align: center;
-    padding: 3.5rem 0 2.5rem;
-    position: relative;
+/* ── Masthead ──
+   A left-aligned journal nameplate rather than a centered hero — this is a
+   working tool, not a landing page. */
+.masthead {
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
 }
-.hero-eyebrow {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: #ff8c32;
-    margin-bottom: 1rem;
-    opacity: 0.9;
+.masthead-mark {
+    font-family: var(--font-serif);
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink) !important;
+    margin: 0 0 0.4rem;
 }
-.hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(2.8rem, 6vw, 5rem);
-    font-weight: 800;
-    line-height: 1.0;
-    letter-spacing: -0.03em;
-    color: #f0ebe0;
+.masthead-tagline {
+    font-size: 0.95rem;
+    color: var(--ink-muted) !important;
+    max-width: 560px;
+    line-height: 1.6;
+}
+
+/* ── Section heading ── */
+.section-heading {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink) !important;
     margin: 0 0 1rem;
 }
-.hero h1 span {
-    color: #ff8c32;
+
+/* ── Input field ── */
+.field-label-text {
+    font-size: 0.82rem;
+    color: var(--ink-muted) !important;
+    margin-bottom: 0.5rem;
 }
-.hero-sub {
+[data-testid="stTextInput"] label,
+[data-testid="stTextInput"] label p {
+    font-family: var(--font-sans) !important;
+    font-size: 0.82rem !important;
+    color: var(--ink-muted) !important;
+    font-weight: 500 !important;
+}
+[data-testid="stTextInput"] > div,
+[data-testid="stTextInput"] div[data-baseweb="input"],
+[data-testid="stTextInput"] div[data-baseweb="base-input"] {
+    background: var(--paper) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+}
+[data-testid="stTextInput"] input {
+    background: transparent !important;
+    border: none !important;
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    caret-color: var(--ink) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.95rem !important;
+    padding: 0.65rem 0.9rem !important;
+}
+[data-testid="stTextInput"] input::placeholder {
+    color: var(--ink-faint) !important;
+    opacity: 1 !important;
+}
+[data-testid="stTextInput"] div[data-baseweb="base-input"]:focus-within,
+[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+[data-testid="stTextInput"] input:-webkit-autofill {
+    -webkit-text-fill-color: var(--ink) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--paper) inset !important;
+    caret-color: var(--ink) !important;
+}
+
+/* ── Buttons ──
+   Flat, solid, one color. No gradients or glow — this reads as a working
+   tool, not a marketing surface. */
+[data-testid="stBaseButton-secondary"],
+[data-testid="stBaseButton-primary"],
+.stButton > button {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    font-family: var(--font-sans) !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0.65rem 1.4rem !important;
+    cursor: pointer !important;
+    transition: background 0.15s !important;
+    box-shadow: none !important;
+    width: 100%;
+}
+[data-testid="stBaseButton-secondary"] p,
+[data-testid="stBaseButton-primary"] p,
+.stButton > button p {
+    color: #ffffff !important;
+}
+.stButton > button:hover {
+    background: var(--accent-hover) !important;
+}
+
+[data-testid="stDownloadButton"] button {
+    background: var(--paper) !important;
+    border: 1px solid var(--accent) !important;
+}
+[data-testid="stDownloadButton"] button p {
+    color: var(--accent) !important;
+}
+[data-testid="stDownloadButton"] button:hover {
+    background: var(--accent-soft) !important;
+}
+
+/* ── Topic panel ── */
+.input-panel {
+    background: var(--paper-subtle);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.8rem 2rem;
+    margin-bottom: 1.2rem;
+}
+.topic-examples {
+    font-size: 0.85rem;
+    color: var(--ink-faint) !important;
+    margin-top: 1rem;
+}
+.topic-examples b {
+    color: var(--ink-muted) !important;
+    font-weight: 500;
+}
+
+/* ── Pipeline stepper ──
+   A vertical sequence with a connecting line. Numbers are appropriate here
+   because this genuinely is a fixed order of steps. */
+.stepper {
+    position: relative;
+    padding-left: 0.2rem;
+}
+.step-item {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 1.6rem;
+}
+.step-item:last-child { padding-bottom: 0; }
+.step-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 30px;
+    bottom: -2px;
+    width: 1px;
+    background: var(--border);
+}
+.step-marker {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    color: var(--ink-faint);
+    background: var(--paper);
+    z-index: 1;
+}
+.step-item.active .step-marker {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+.step-item.done .step-marker {
+    border-color: var(--success);
+    background: var(--success);
+    color: #ffffff;
+}
+.step-body { padding-top: 0.15rem; }
+.step-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink) !important;
+    margin-bottom: 0.15rem;
+}
+.step-desc {
+    font-size: 0.83rem;
+    color: var(--ink-muted) !important;
+    line-height: 1.5;
+}
+.step-state {
+    font-size: 0.76rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+.step-item.waiting .step-state { color: var(--ink-faint) !important; }
+.step-item.active .step-state  { color: var(--accent) !important; }
+.step-item.done .step-state    { color: var(--success) !important; }
+
+/* ── Result panels ── */
+.result-panel {
+    background: var(--paper-subtle);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.4rem 1.6rem;
+    margin-top: 0.5rem;
+}
+.result-panel-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink-muted) !important;
+    margin-bottom: 0.8rem;
+}
+.result-content {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--ink) !important;
+    white-space: pre-wrap;
+}
+
+/* ── Report & critique panels ──
+   Distinguished by a top accent rule, not by wrapping every block in an
+   identical bordered card. */
+.report-panel, .report-panel *,
+.critique-panel, .critique-panel * {
+    color: var(--ink) !important;
+}
+.report-panel {
+    background: var(--paper);
+    border-top: 2px solid var(--accent);
+    padding: 1.8rem 0 0.5rem;
+    margin-top: 0.5rem;
+}
+.critique-panel {
+    background: var(--paper);
+    border-top: 2px solid var(--success);
+    padding: 1.8rem 0 0.5rem;
+    margin-top: 2rem;
+}
+.panel-label {
+    font-family: var(--font-serif);
     font-size: 1.05rem;
-    font-weight: 300;
-    color: #a09890;
-    max-width: 520px;
-    margin: 0 auto;
-    line-height: 1.65;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+.panel-label.navy { color: var(--accent) !important; }
+.panel-label.green { color: var(--success) !important; }
+
+/* ── Spinner ── */
+[data-testid="stSpinner"] p { color: var(--ink-muted) !important; font-size: 0.88rem; }
+
+/* ── Expander ── */
+details summary p {
+    font-size: 0.85rem !important;
+    color: var(--ink-muted) !important;
+    font-weight: 500;
 }
 
 /* ── Divider ── */
 .divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,140,50,0.3), transparent);
-    margin: 2rem 0;
+    background: var(--border);
+    margin: 2.2rem 0;
 }
 
-/* ── Input card ── */
-.input-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,140,50,0.15);
-    border-radius: 16px;
-    padding: 2rem 2.5rem;
-    margin-bottom: 2rem;
-    backdrop-filter: blur(8px);
-}
-
-/* ── Streamlit input overrides ── */
-.stTextInput > div > div > input {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,140,50,0.25) !important;
-    border-radius: 10px !important;
-    color: #f0ebe0 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 1rem !important;
-    padding: 0.75rem 1rem !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #ff8c32 !important;
-    box-shadow: 0 0 0 3px rgba(255,140,50,0.12) !important;
-}
-.stTextInput > label {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.72rem !important;
-    letter-spacing: 0.15em !important;
-    text-transform: uppercase !important;
-    color: #ff8c32 !important;
-    font-weight: 500 !important;
-}
-
-/* ── Button ── */
-.stButton > button {
-    background: linear-gradient(135deg, #ff8c32 0%, #ff5a1a 100%) !important;
-    color: #0a0a0f !important;
-    font-family: 'Syne', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    letter-spacing: 0.04em !important;
-    border: none !important;
-    border-radius: 10px !important;
-    padding: 0.7rem 2.2rem !important;
-    cursor: pointer !important;
-    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s !important;
-    box-shadow: 0 4px 20px rgba(255,140,50,0.3) !important;
-    width: 100%;
-}
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 28px rgba(255,140,50,0.4) !important;
-    opacity: 0.95 !important;
-}
-.stButton > button:active {
-    transform: translateY(0) !important;
-}
-
-/* ── Pipeline step cards ── */
-.step-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px;
-    padding: 1.5rem 1.8rem;
-    margin-bottom: 1.2rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.3s;
-}
-.step-card.active {
-    border-color: rgba(255,140,50,0.4);
-    background: rgba(255,140,50,0.04);
-}
-.step-card.done {
-    border-color: rgba(80,200,120,0.3);
-    background: rgba(80,200,120,0.03);
-}
-.step-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    border-radius: 14px 0 0 14px;
-    background: rgba(255,255,255,0.05);
-    transition: background 0.3s;
-}
-.step-card.active::before { background: #ff8c32; }
-.step-card.done::before   { background: #50c878; }
-
-.step-header {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 0.3rem;
-}
-.step-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    color: #ff8c32;
-    opacity: 0.7;
-}
-.step-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #f0ebe0;
-}
-.step-status {
-    margin-left: auto;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 0.1em;
-}
-.status-waiting  { color: #555; }
-.status-running  { color: #ff8c32; }
-.status-done     { color: #50c878; }
-
-/* ── Result panels ── */
-.result-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 14px;
-    padding: 1.8rem 2rem;
-    margin-top: 1rem;
-    margin-bottom: 1.5rem;
-}
-.result-panel-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #ff8c32;
-    margin-bottom: 1rem;
-    padding-bottom: 0.7rem;
-    border-bottom: 1px solid rgba(255,140,50,0.15);
-}
-.result-content {
-    font-size: 0.92rem;
-    line-height: 1.8;
-    color: #cdc8bf;
-    white-space: pre-wrap;
-    font-family: 'DM Sans', sans-serif;
-}
-
-/* ── Report & feedback panels ── */
-.report-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,140,50,0.2);
-    border-radius: 16px;
-    padding: 2rem 2.5rem;
-    margin-top: 1rem;
-}
-.feedback-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(80,200,120,0.2);
-    border-radius: 16px;
-    padding: 2rem 2.5rem;
-    margin-top: 1rem;
-}
-.panel-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 1.2rem;
-    padding-bottom: 0.7rem;
-}
-.panel-label.orange {
-    color: #ff8c32;
-    border-bottom: 1px solid rgba(255,140,50,0.15);
-}
-.panel-label.green {
-    color: #50c878;
-    border-bottom: 1px solid rgba(80,200,120,0.15);
-}
-
-/* ── Progress text ── */
-.stSpinner > div { color: #ff8c32 !important; }
-
-/* ── Expander ── */
-details summary {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.75rem !important;
-    color: #a09890 !important;
-    letter-spacing: 0.1em !important;
-    cursor: pointer;
-}
-
-/* ── Section heading ── */
-.section-heading {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #f0ebe0;
-    margin: 2rem 0 1rem;
-}
-
-/* ── Toast-style notice ── */
+/* ── Footer ── */
 .notice {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: #605850;
-    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-faint) !important;
     margin-top: 3rem;
-    letter-spacing: 0.08em;
 }
+
+[data-testid="stAlert"] p { color: var(--ink) !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Helper: render a step card ────────────────────────────────────────────────
-def step_card(num: str, title: str, state: str, desc: str = ""):
-    status_map = {
-        "waiting": ("WAITING", "status-waiting"),
-        "running": ("● RUNNING", "status-running"),
-        "done":    ("✓ DONE",   "status-done"),
-    }
-    label, cls = status_map.get(state, ("", ""))
-    card_cls = {"running": "active", "done": "done"}.get(state, "")
+# ── Helper: render a stepper item ─────────────────────────────────────────────
+def step_item(num: str, title: str, desc: str, state: str):
+    state_label = {"waiting": "Waiting", "active": "In progress", "done": "Complete"}[state]
+    marker = "✓" if state == "done" else num
     st.markdown(f"""
-    <div class="step-card {card_cls}">
-        <div class="step-header">
-            <span class="step-num">{num}</span>
-            <span class="step-title">{title}</span>
-            <span class="step-status {cls}">{label}</span>
+    <div class="step-item {state}">
+        <div class="step-marker">{marker}</div>
+        <div class="step-body">
+            <div class="step-title">{title}</div>
+            <div class="step-desc">{desc}</div>
+            <div class="step-state">{state_label}</div>
         </div>
-        {"<div style='font-size:0.82rem;color:#706860;margin-top:0.3rem;'>"+desc+"</div>" if desc else ""}
     </div>
     """, unsafe_allow_html=True)
 
@@ -317,87 +358,76 @@ for key in ("results", "running", "done"):
         st.session_state[key] = {} if key == "results" else False
 
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
+# ── Masthead ──────────────────────────────────────────────────────────────────
 st.markdown("""
-<div class="hero">
-    <div class="hero-eyebrow">Multi-Agent AI System</div>
-    <h1>Research<span>Mind</span></h1>
-    <p class="hero-sub">
-        Four specialized AI agents collaborate — searching, scraping, writing,
-        and critiquing — to deliver a polished research report on any topic.
-    </p>
+<div class="masthead">
+    <div class="masthead-mark">ResearchMind</div>
+    <div class="masthead-tagline">
+        Four agents work in sequence — searching, reading, writing, and reviewing —
+        to turn a topic into a sourced research report.
+    </div>
 </div>
-<div class="divider"></div>
 """, unsafe_allow_html=True)
 
 
 # ── Layout: input left, pipeline right ───────────────────────────────────────
-col_input, col_spacer, col_pipeline = st.columns([5, 0.5, 4])
+col_input, col_spacer, col_pipeline = st.columns([5, 0.6, 4])
 
 with col_input:
-    st.markdown('<div class="input-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-heading">Start a report</div>', unsafe_allow_html=True)
+    st.markdown('<div class="input-panel">', unsafe_allow_html=True)
     topic = st.text_input(
-        "Research Topic",
+        "Research topic",
         placeholder="e.g. Quantum computing breakthroughs in 2025",
         key="topic_input",
         label_visibility="visible",
     )
-    run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Example chips
     st.markdown("""
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
-        <span style="font-family:'DM Mono',monospace;font-size:0.68rem;color:#605850;letter-spacing:0.1em;">TRY →</span>
+    <script>
+    (function() {
+        const inputs = window.parent.document.querySelectorAll('[data-testid="stTextInput"] input');
+        inputs.forEach(el => {
+            el.setAttribute('autocomplete', 'off');
+            el.setAttribute('spellcheck', 'false');
+        });
+    })();
+    </script>
     """, unsafe_allow_html=True)
-    examples = ["LLM agents 2025", "CRISPR gene editing", "Fusion energy progress"]
-    for ex in examples:
-        st.markdown(f"""
-        <span style="
-            background:rgba(255,255,255,0.04);
-            border:1px solid rgba(255,255,255,0.08);
-            border-radius:6px;
-            padding:0.25rem 0.7rem;
-            font-size:0.75rem;
-            color:#a09890;
-            font-family:'DM Sans',sans-serif;
-            cursor:default;
-        ">{ex}</span>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    run_btn = st.button("Start research", use_container_width=True)
+    st.markdown("""
+    <div class="topic-examples"><b>Or try:</b> LLM agents in 2025, CRISPR gene editing, fusion energy progress</div>
+    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col_pipeline:
     st.markdown('<div class="section-heading">Pipeline</div>', unsafe_allow_html=True)
 
     r = st.session_state.results
-    done = st.session_state.done
 
     def s(step):
         if not r:
             return "waiting"
         steps = ["search", "reader", "writer", "critic"]
-        idx = steps.index(step)
-        completed = list(r.keys())
-        # figure out which steps are done
         if step in r:
             return "done"
-        # which step is running now (first not in r)
         if st.session_state.running:
-            for i, k in enumerate(steps):
+            for k in steps:
                 if k not in r:
-                    return "running" if k == step else "waiting"
+                    return "active" if k == step else "waiting"
         return "waiting"
 
-    step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
-    step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
-    step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
-    step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
+    st.markdown('<div class="stepper">', unsafe_allow_html=True)
+    step_item("1", "Search agent", "Gathers recent, relevant sources from the web.", s("search"))
+    step_item("2", "Reader agent", "Opens the strongest source and extracts its detail.", s("reader"))
+    step_item("3", "Writer chain", "Drafts the full report from the gathered research.", s("writer"))
+    step_item("4", "Critic chain", "Reviews the draft and scores it for quality.", s("critic"))
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── Run pipeline ──────────────────────────────────────────────────────────────
 if run_btn:
     if not topic.strip():
-        st.warning("Please enter a research topic first.")
+        st.warning("Enter a research topic first.")
     else:
         st.session_state.results = {}
         st.session_state.running = True
@@ -409,17 +439,16 @@ if st.session_state.running and not st.session_state.done:
     topic_val = st.session_state.topic_input
 
     # ── Step 1: Search ──
-    with st.spinner("🔍  Search Agent is working…"):
+    with st.spinner("Search agent is gathering sources…"):
         search_agent = build_search_agent()
         sr = search_agent.invoke({
             "messages": [("user", f"Find recent, reliable and detailed information about: {topic_val}")]
         })
         results["search"] = sr["messages"][-1].content
         st.session_state.results = dict(results)
-    st.rerun() if False else None   # keep inline for now
 
     # ── Step 2: Reader ──
-    with st.spinner("📄  Reader Agent is scraping top resources…"):
+    with st.spinner("Reader agent is extracting detail from the top source…"):
         reader_agent = build_search_reader_agent()
         rr = reader_agent.invoke({
             "messages": [("user",
@@ -432,7 +461,7 @@ if st.session_state.running and not st.session_state.done:
         st.session_state.results = dict(results)
 
     # ── Step 3: Writer ──
-    with st.spinner("✍️  Writer is drafting the report…"):
+    with st.spinner("Writer is drafting the report…"):
         research_combined = (
             f"SEARCH RESULTS:\n{results['search']}\n\n"
             f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
@@ -444,7 +473,7 @@ if st.session_state.running and not st.session_state.done:
         st.session_state.results = dict(results)
 
     # ── Step 4: Critic ──
-    with st.spinner("🧐  Critic is reviewing the report…"):
+    with st.spinner("Critic is reviewing the report…"):
         results["critic"] = critic_chain.invoke({
             "report": results["writer"]
         })
@@ -462,47 +491,37 @@ if r:
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="section-heading">Results</div>', unsafe_allow_html=True)
 
-    # Raw outputs in expanders
     if "search" in r:
-        with st.expander("🔍 Search Results (raw)", expanded=False):
-            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Search Agent Output</div>'
+        with st.expander("Search results (raw)", expanded=False):
+            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Search agent output</div>'
                         f'<div class="result-content">{r["search"]}</div></div>', unsafe_allow_html=True)
 
     if "reader" in r:
-        with st.expander("📄 Scraped Content (raw)", expanded=False):
-            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Reader Agent Output</div>'
+        with st.expander("Scraped content (raw)", expanded=False):
+            st.markdown(f'<div class="result-panel"><div class="result-panel-title">Reader agent output</div>'
                         f'<div class="result-content">{r["reader"]}</div></div>', unsafe_allow_html=True)
 
-    # Final report
     if "writer" in r:
-        st.markdown("""
-        <div class="report-panel">
-            <div class="panel-label orange">📝 Final Research Report</div>
-        """, unsafe_allow_html=True)
-        st.markdown(r["writer"])   # render markdown natively
+        st.markdown('<div class="report-panel"><div class="panel-label navy">Research report</div>',
+                    unsafe_allow_html=True)
+        st.markdown(r["writer"])
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Download
         st.download_button(
-            label="⬇  Download Report (.md)",
+            label="Download report (.md)",
             data=r["writer"],
             file_name=f"research_report_{int(time.time())}.md",
             mime="text/markdown",
         )
 
-    # Critic feedback
     if "critic" in r:
-        st.markdown("""
-        <div class="feedback-panel">
-            <div class="panel-label green">🧐 Critic Feedback</div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="critique-panel"><div class="panel-label green">Critic feedback</div>',
+                    unsafe_allow_html=True)
         st.markdown(r["critic"])
         st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div class="notice">
-    ResearchMind · Powered by LangChain multi-agent pipeline · Built with Streamlit
-</div>
+<div class="notice">ResearchMind is a four-agent pipeline built with LangChain and Streamlit.</div>
 """, unsafe_allow_html=True)
